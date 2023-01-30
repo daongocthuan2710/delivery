@@ -1,0 +1,16 @@
+app:
+  name: 'go-clean-template'
+  version: '1.0.0'
+
+http:
+  port: '8000'
+
+grpc:
+  port: '9000'
+
+logger:
+  log_level: 'debug'
+
+postgres:
+  pool_max: 2
+  url: 'postgres://admin:123456@localhost:5432/ecomx-delivery'
