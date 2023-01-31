@@ -1,9 +1,10 @@
 module delivery
 
-go 1.19
+go 1.18
 
 require (
 	github.com/friendsofgo/errors v0.9.2
+	github.com/go-resty/resty/v2 v2.7.0
 	github.com/ilyakaznacheev/cleanenv v1.4.2
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
