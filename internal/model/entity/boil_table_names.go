@@ -5,6 +5,12 @@ package entity
 
 var TableNames = struct {
 	Deliveries string
+	Districts  string
+	Provinces  string
+	Wards      string
 }{
 	Deliveries: "deliveries",
+	Districts:  "districts",
+	Provinces:  "provinces",
+	Wards:      "wards",
 }

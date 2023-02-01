@@ -1,17 +1,24 @@
 package service
 
-import "delivery/internal/repo"
+import (
+	"delivery/internal/config"
+	"delivery/internal/repo"
+)
 
 type Deps struct {
 	Repos *repo.Repositories
+	Cfg   *config.Config
 }
 
 type Services struct {
 	Delivery IDelivery
+	Location ILocation
 }
 
 func NewServices(deps *Deps) *Services {
+	loc := NewLocation()
 	return &Services{
-		Delivery: NewDeliveryService(deps.Repos.Delivery),
+		Location: loc,
+		Delivery: NewDeliveryService(deps.Repos.Delivery, deps.Cfg, loc),
 	}
 }

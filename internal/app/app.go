@@ -36,6 +36,7 @@ func Run(cfg *config.Config) {
 	// Service
 	services := service.NewServices(&service.Deps{
 		Repos: repos,
+		Cfg:   cfg,
 	})
 
 	// grpc

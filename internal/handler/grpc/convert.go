@@ -23,7 +23,7 @@ func createDeliveryPBToReq(orderReq *proto.CreateDeliveryReq) req.DeliveryCreate
 func estimateFeePBToReq(payload *proto.EstimateFeeReq) req.EstimateFee {
 	return req.EstimateFee{
 		OrderValue: payload.GetOrderValue(),
-		Cod:        payload.GetCod(),
+		COD:        payload.GetCod(),
 		Weight:     payload.GetWeight(),
 		From:       deliveryInfoPBToReq(payload.GetFrom()),
 		To:         deliveryInfoPBToReq(payload.GetTo()),

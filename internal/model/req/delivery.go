@@ -22,7 +22,7 @@ type DeliveryInfo struct {
 
 type EstimateFee struct {
 	OrderValue int64
-	Cod        int64
+	COD        int64
 	Weight     int64
 	From       *DeliveryInfo
 	To         *DeliveryInfo

@@ -14,12 +14,14 @@ type (
 		GRPC `yaml:"grpc"`
 		Log  `yaml:"logger"`
 		PG   `yaml:"postgres"`
+		GHN
 	}
 
 	// App -.
 	App struct {
 		Name    string `env-required:"true" yaml:"name"    env:"APP_NAME"`
 		Version string `env-required:"true" yaml:"version" env:"APP_VERSION"`
+		ENV     string `env:"ENV"`
 	}
 
 	// HTTP -.
@@ -41,6 +43,11 @@ type (
 	PG struct {
 		PoolMax int    `env-required:"true" yaml:"pool_max" env:"PG_POOL_MAX"`
 		URL     string `env-required:"true"                 env:"PG_URL"`
+	}
+
+	GHN struct {
+		Token  string `env:"GHN_TOKEN"`
+		ShopID string `env:"GHN_SHOP_ID"`
 	}
 )
 

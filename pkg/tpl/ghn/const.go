@@ -25,3 +25,18 @@ const (
 const (
 	codeSuccess = 200
 )
+
+const (
+	ServiceTypeExpress  = 1
+	ServiceTypeStandard = 2
+	ServiceTypeSaving   = 3
+)
+
+const (
+	PaymentTypeSeller = 1
+)
+const (
+	RequiredNoteCHOTHUHANG         = "CHOTHUHANG"
+	RequiredNoteCHOXEMHANGKHONGTHU = "CHOXEMHANGKHONGTHU"
+	RequiredNoteKHONGCHOXEMHANG    = "KHONGCHOXEMHANG"
+)
