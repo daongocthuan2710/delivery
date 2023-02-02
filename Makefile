@@ -14,6 +14,9 @@ migrate-create:  ### create new migration: make migrate-create name=add_table_xy
 migrate-up: ### migration up
 	migrate -path migrations -database '$(PG_URL)?sslmode=disable' up $(num)
 
+migrate-down: ### migration down
+	migrate -path migrations -database '$(PG_URL)?sslmode=disable' down $(num)
+
 sql-gen:
 	go generate
 

@@ -73,15 +73,26 @@ var WardWhere = struct {
 
 // WardRels is where relationship names are stored.
 var WardRels = struct {
-}{}
+	District string
+}{
+	District: "District",
+}
 
 // wardR is where relationships are stored.
 type wardR struct {
+	District *District `boil:"District" json:"District" toml:"District" yaml:"District"`
 }
 
 // NewStruct creates a new relationship struct
 func (*wardR) NewStruct() *wardR {
 	return &wardR{}
+}
+
+func (r *wardR) GetDistrict() *District {
+	if r == nil {
+		return nil
+	}
+	return r.District
 }
 
 // wardL is where Load methods for each relationship are stored.
@@ -371,6 +382,188 @@ func (q wardQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool,
 	}
 
 	return count > 0, nil
+}
+
+// District pointed to by the foreign key.
+func (o *Ward) District(mods ...qm.QueryMod) districtQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.DistrictID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return Districts(queryMods...)
+}
+
+// LoadDistrict allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (wardL) LoadDistrict(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWard interface{}, mods queries.Applicator) error {
+	var slice []*Ward
+	var object *Ward
+
+	if singular {
+		var ok bool
+		object, ok = maybeWard.(*Ward)
+		if !ok {
+			object = new(Ward)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWard)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWard))
+			}
+		}
+	} else {
+		s, ok := maybeWard.(*[]*Ward)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWard)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWard))
+			}
+		}
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &wardR{}
+		}
+		if !queries.IsNil(object.DistrictID) {
+			args = append(args, object.DistrictID)
+		}
+
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &wardR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.DistrictID) {
+					continue Outer
+				}
+			}
+
+			if !queries.IsNil(obj.DistrictID) {
+				args = append(args, obj.DistrictID)
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`districts`),
+		qm.WhereIn(`districts.id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load District")
+	}
+
+	var resultSlice []*District
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice District")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for districts")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for districts")
+	}
+
+	if len(districtAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.District = foreign
+		if foreign.R == nil {
+			foreign.R = &districtR{}
+		}
+		foreign.R.Wards = append(foreign.R.Wards, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.DistrictID, foreign.ID) {
+				local.R.District = foreign
+				if foreign.R == nil {
+					foreign.R = &districtR{}
+				}
+				foreign.R.Wards = append(foreign.R.Wards, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// SetDistrict of the ward to the related item.
+// Sets o.R.District to related.
+// Adds o to related.R.Wards.
+func (o *Ward) SetDistrict(ctx context.Context, exec boil.ContextExecutor, insert bool, related *District) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"wards\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"district_id"}),
+		strmangle.WhereClause("\"", "\"", 2, wardPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.DistrictID, related.ID)
+	if o.R == nil {
+		o.R = &wardR{
+			District: related,
+		}
+	} else {
+		o.R.District = related
+	}
+
+	if related.R == nil {
+		related.R = &districtR{
+			Wards: WardSlice{o},
+		}
+	} else {
+		related.R.Wards = append(related.R.Wards, o)
+	}
+
+	return nil
 }
 
 // Wards retrieves all the records using an executor.

@@ -101,7 +101,10 @@ func TestInsert(t *testing.T) {
 
 // TestToOne tests cannot be run in parallel
 // or deadlocks can occur.
-func TestToOne(t *testing.T) {}
+func TestToOne(t *testing.T) {
+	t.Run("DistrictToProvinceUsingProvince", testDistrictToOneProvinceUsingProvince)
+	t.Run("WardToDistrictUsingDistrict", testWardToOneDistrictUsingDistrict)
+}
 
 // TestOneToOne tests cannot be run in parallel
 // or deadlocks can occur.
@@ -109,11 +112,17 @@ func TestOneToOne(t *testing.T) {}
 
 // TestToMany tests cannot be run in parallel
 // or deadlocks can occur.
-func TestToMany(t *testing.T) {}
+func TestToMany(t *testing.T) {
+	t.Run("DistrictToWards", testDistrictToManyWards)
+	t.Run("ProvinceToDistricts", testProvinceToManyDistricts)
+}
 
 // TestToOneSet tests cannot be run in parallel
 // or deadlocks can occur.
-func TestToOneSet(t *testing.T) {}
+func TestToOneSet(t *testing.T) {
+	t.Run("DistrictToProvinceUsingDistricts", testDistrictToOneSetOpProvinceUsingProvince)
+	t.Run("WardToDistrictUsingWards", testWardToOneSetOpDistrictUsingDistrict)
+}
 
 // TestToOneRemove tests cannot be run in parallel
 // or deadlocks can occur.
@@ -129,7 +138,10 @@ func TestOneToOneRemove(t *testing.T) {}
 
 // TestToManyAdd tests cannot be run in parallel
 // or deadlocks can occur.
-func TestToManyAdd(t *testing.T) {}
+func TestToManyAdd(t *testing.T) {
+	t.Run("DistrictToWards", testDistrictToManyAddOpWards)
+	t.Run("ProvinceToDistricts", testProvinceToManyAddOpDistricts)
+}
 
 // TestToManySet tests cannot be run in parallel
 // or deadlocks can occur.

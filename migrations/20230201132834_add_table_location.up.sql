@@ -18,6 +18,8 @@ CREATE TABLE districts
 );
 ALTER TABLE districts
     ADD CONSTRAINT district_pkey PRIMARY KEY (id);
+ALTER TABLE districts
+    ADD CONSTRAINT district_province_fkey FOREIGN KEY (province_id) REFERENCES provinces (id);
 
 CREATE TABLE wards
 (
@@ -28,3 +30,5 @@ CREATE TABLE wards
 );
 ALTER TABLE wards
     ADD CONSTRAINT ward_pkey PRIMARY KEY (id);
+ALTER TABLE wards
+    ADD CONSTRAINT ward_district_fkey FOREIGN KEY (district_id) REFERENCES districts (id);

@@ -86,15 +86,36 @@ var DistrictWhere = struct {
 
 // DistrictRels is where relationship names are stored.
 var DistrictRels = struct {
-}{}
+	Province string
+	Wards    string
+}{
+	Province: "Province",
+	Wards:    "Wards",
+}
 
 // districtR is where relationships are stored.
 type districtR struct {
+	Province *Province `boil:"Province" json:"Province" toml:"Province" yaml:"Province"`
+	Wards    WardSlice `boil:"Wards" json:"Wards" toml:"Wards" yaml:"Wards"`
 }
 
 // NewStruct creates a new relationship struct
 func (*districtR) NewStruct() *districtR {
 	return &districtR{}
+}
+
+func (r *districtR) GetProvince() *Province {
+	if r == nil {
+		return nil
+	}
+	return r.Province
+}
+
+func (r *districtR) GetWards() WardSlice {
+	if r == nil {
+		return nil
+	}
+	return r.Wards
 }
 
 // districtL is where Load methods for each relationship are stored.
@@ -384,6 +405,369 @@ func (q districtQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (b
 	}
 
 	return count > 0, nil
+}
+
+// Province pointed to by the foreign key.
+func (o *District) Province(mods ...qm.QueryMod) provinceQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.ProvinceID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return Provinces(queryMods...)
+}
+
+// Wards retrieves all the ward's Wards with an executor.
+func (o *District) Wards(mods ...qm.QueryMod) wardQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"wards\".\"district_id\"=?", o.ID),
+	)
+
+	return Wards(queryMods...)
+}
+
+// LoadProvince allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (districtL) LoadProvince(ctx context.Context, e boil.ContextExecutor, singular bool, maybeDistrict interface{}, mods queries.Applicator) error {
+	var slice []*District
+	var object *District
+
+	if singular {
+		var ok bool
+		object, ok = maybeDistrict.(*District)
+		if !ok {
+			object = new(District)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeDistrict)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeDistrict))
+			}
+		}
+	} else {
+		s, ok := maybeDistrict.(*[]*District)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeDistrict)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeDistrict))
+			}
+		}
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &districtR{}
+		}
+		if !queries.IsNil(object.ProvinceID) {
+			args = append(args, object.ProvinceID)
+		}
+
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &districtR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ProvinceID) {
+					continue Outer
+				}
+			}
+
+			if !queries.IsNil(obj.ProvinceID) {
+				args = append(args, obj.ProvinceID)
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`provinces`),
+		qm.WhereIn(`provinces.id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Province")
+	}
+
+	var resultSlice []*Province
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Province")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for provinces")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for provinces")
+	}
+
+	if len(provinceAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Province = foreign
+		if foreign.R == nil {
+			foreign.R = &provinceR{}
+		}
+		foreign.R.Districts = append(foreign.R.Districts, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.ProvinceID, foreign.ID) {
+				local.R.Province = foreign
+				if foreign.R == nil {
+					foreign.R = &provinceR{}
+				}
+				foreign.R.Districts = append(foreign.R.Districts, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWards allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (districtL) LoadWards(ctx context.Context, e boil.ContextExecutor, singular bool, maybeDistrict interface{}, mods queries.Applicator) error {
+	var slice []*District
+	var object *District
+
+	if singular {
+		var ok bool
+		object, ok = maybeDistrict.(*District)
+		if !ok {
+			object = new(District)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeDistrict)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeDistrict))
+			}
+		}
+	} else {
+		s, ok := maybeDistrict.(*[]*District)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeDistrict)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeDistrict))
+			}
+		}
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &districtR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &districtR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`wards`),
+		qm.WhereIn(`wards.district_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load wards")
+	}
+
+	var resultSlice []*Ward
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice wards")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on wards")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for wards")
+	}
+
+	if len(wardAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.Wards = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &wardR{}
+			}
+			foreign.R.District = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.DistrictID) {
+				local.R.Wards = append(local.R.Wards, foreign)
+				if foreign.R == nil {
+					foreign.R = &wardR{}
+				}
+				foreign.R.District = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// SetProvince of the district to the related item.
+// Sets o.R.Province to related.
+// Adds o to related.R.Districts.
+func (o *District) SetProvince(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Province) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"districts\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"province_id"}),
+		strmangle.WhereClause("\"", "\"", 2, districtPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.ProvinceID, related.ID)
+	if o.R == nil {
+		o.R = &districtR{
+			Province: related,
+		}
+	} else {
+		o.R.Province = related
+	}
+
+	if related.R == nil {
+		related.R = &provinceR{
+			Districts: DistrictSlice{o},
+		}
+	} else {
+		related.R.Districts = append(related.R.Districts, o)
+	}
+
+	return nil
+}
+
+// AddWards adds the given related objects to the existing relationships
+// of the district, optionally inserting them as new records.
+// Appends related to o.R.Wards.
+// Sets related.R.District appropriately.
+func (o *District) AddWards(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Ward) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.DistrictID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"wards\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"district_id"}),
+				strmangle.WhereClause("\"", "\"", 2, wardPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.DistrictID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &districtR{
+			Wards: related,
+		}
+	} else {
+		o.R.Wards = append(o.R.Wards, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &wardR{
+				District: o,
+			}
+		} else {
+			rel.R.District = o
+		}
+	}
+	return nil
 }
 
 // Districts retrieves all the records using an executor.

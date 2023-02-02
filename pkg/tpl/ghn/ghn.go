@@ -2,8 +2,10 @@ package ghn
 
 import (
 	"context"
-	"delivery/pkg/httpclient"
 	"fmt"
+	"strconv"
+
+	"delivery/pkg/httpclient"
 )
 
 func New(token string, shopID string, isProd bool) *Client {
@@ -87,6 +89,7 @@ func (c *Client) GetDistricts(ctx context.Context, provinceID int) (*DistrictRes
 		SetContext(ctx).
 		SetHeader(headerKeyShopID, c.ShopID).
 		SetHeader(headerKeyToken, c.Token).
+		SetQueryParam("province_id", strconv.Itoa(provinceID)).
 		SetHeader(headerKeyContentType, headerValueContentTypeJSON).
 		SetResult(DistrictRes{}).
 		SetError(DistrictRes{}).
@@ -105,6 +108,7 @@ func (c *Client) GetWards(ctx context.Context, districtID int) (*WardRes, error)
 	api := c.getAPIURL(pathGetWards)
 	resp, err := httpclient.NewRequest().
 		SetContext(ctx).
+		SetQueryParam("district_id", strconv.Itoa(districtID)).
 		SetHeader(headerKeyShopID, c.ShopID).
 		SetHeader(headerKeyToken, c.Token).
 		SetHeader(headerKeyContentType, headerValueContentTypeJSON).

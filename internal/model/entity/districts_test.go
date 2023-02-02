@@ -494,6 +494,277 @@ func testDistrictsInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testDistrictToManyWards(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a District
+	var b, c Ward
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, districtDBTypes, true, districtColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize District struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, wardDBTypes, false, wardColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, wardDBTypes, false, wardColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.DistrictID, a.ID)
+	queries.Assign(&c.DistrictID, a.ID)
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.Wards().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if queries.Equal(v.DistrictID, b.DistrictID) {
+			bFound = true
+		}
+		if queries.Equal(v.DistrictID, c.DistrictID) {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := DistrictSlice{&a}
+	if err = a.L.LoadWards(ctx, tx, false, (*[]*District)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Wards); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.Wards = nil
+	if err = a.L.LoadWards(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Wards); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testDistrictToManyAddOpWards(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a District
+	var b, c, d, e Ward
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, districtDBTypes, false, strmangle.SetComplement(districtPrimaryKeyColumns, districtColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Ward{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, wardDBTypes, false, strmangle.SetComplement(wardPrimaryKeyColumns, wardColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Ward{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddWards(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ID, first.DistrictID) {
+			t.Error("foreign key was wrong value", a.ID, first.DistrictID)
+		}
+		if !queries.Equal(a.ID, second.DistrictID) {
+			t.Error("foreign key was wrong value", a.ID, second.DistrictID)
+		}
+
+		if first.R.District != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.District != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.Wards[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Wards[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.Wards().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testDistrictToOneProvinceUsingProvince(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local District
+	var foreign Province
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, districtDBTypes, false, districtColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize District struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, provinceDBTypes, false, provinceColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Province struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&local.ProvinceID, foreign.ID)
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.Province().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !queries.Equal(check.ID, foreign.ID) {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	ranAfterSelectHook := false
+	AddProvinceHook(boil.AfterSelectHook, func(ctx context.Context, e boil.ContextExecutor, o *Province) error {
+		ranAfterSelectHook = true
+		return nil
+	})
+
+	slice := DistrictSlice{&local}
+	if err = local.L.LoadProvince(ctx, tx, false, (*[]*District)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Province == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.Province = nil
+	if err = local.L.LoadProvince(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Province == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	if !ranAfterSelectHook {
+		t.Error("failed to run AfterSelect hook for relationship")
+	}
+}
+
+func testDistrictToOneSetOpProvinceUsingProvince(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a District
+	var b, c Province
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, districtDBTypes, false, strmangle.SetComplement(districtPrimaryKeyColumns, districtColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, provinceDBTypes, false, strmangle.SetComplement(provincePrimaryKeyColumns, provinceColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, provinceDBTypes, false, strmangle.SetComplement(provincePrimaryKeyColumns, provinceColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*Province{&b, &c} {
+		err = a.SetProvince(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.Province != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.Districts[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if !queries.Equal(a.ProvinceID, x.ID) {
+			t.Error("foreign key was wrong value", a.ProvinceID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.ProvinceID))
+		reflect.Indirect(reflect.ValueOf(&a.ProvinceID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if !queries.Equal(a.ProvinceID, x.ID) {
+			t.Error("foreign key was wrong value", a.ProvinceID, x.ID)
+		}
+	}
+}
+
 func testDistrictsReload(t *testing.T) {
 	t.Parallel()
 

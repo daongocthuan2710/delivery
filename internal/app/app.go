@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"delivery/internal/config"
+	"delivery/internal/data"
 	"delivery/internal/handler/grpc"
 	"delivery/internal/model/proto"
 	"delivery/internal/repo"
@@ -30,6 +31,8 @@ func Run(cfg *config.Config) {
 		l.Fatal(fmt.Errorf("app - Run - postgres.New: %w", err))
 	}
 	defer pg.Close()
+
+	go data.Init(pg.DB, cfg)
 
 	// Repository
 	repos := repo.NewRepositories(pg.DB)

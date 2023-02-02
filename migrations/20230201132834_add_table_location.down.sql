@@ -1,3 +1,3 @@
-DROP TABLE provinces;
-DROP TABLE districts;
 DROP TABLE wards;
+DROP TABLE districts;
+DROP TABLE provinces;

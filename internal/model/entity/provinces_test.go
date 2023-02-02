@@ -494,6 +494,159 @@ func testProvincesInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testProvinceToManyDistricts(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Province
+	var b, c District
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provinceDBTypes, true, provinceColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Province struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, districtDBTypes, false, districtColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, districtDBTypes, false, districtColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.ProvinceID, a.ID)
+	queries.Assign(&c.ProvinceID, a.ID)
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.Districts().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if queries.Equal(v.ProvinceID, b.ProvinceID) {
+			bFound = true
+		}
+		if queries.Equal(v.ProvinceID, c.ProvinceID) {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := ProvinceSlice{&a}
+	if err = a.L.LoadDistricts(ctx, tx, false, (*[]*Province)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Districts); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.Districts = nil
+	if err = a.L.LoadDistricts(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Districts); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testProvinceToManyAddOpDistricts(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Province
+	var b, c, d, e District
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provinceDBTypes, false, strmangle.SetComplement(provincePrimaryKeyColumns, provinceColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*District{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, districtDBTypes, false, strmangle.SetComplement(districtPrimaryKeyColumns, districtColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*District{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddDistricts(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ID, first.ProvinceID) {
+			t.Error("foreign key was wrong value", a.ID, first.ProvinceID)
+		}
+		if !queries.Equal(a.ID, second.ProvinceID) {
+			t.Error("foreign key was wrong value", a.ID, second.ProvinceID)
+		}
+
+		if first.R.Province != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Province != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.Districts[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Districts[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.Districts().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
 func testProvincesReload(t *testing.T) {
 	t.Parallel()
 
