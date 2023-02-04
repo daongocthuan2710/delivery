@@ -11,7 +11,7 @@ func createDeliveryPBToReq(orderReq *proto.CreateDeliveryReq) req.DeliveryCreate
 		OrderCode:   orderReq.GetOrderCode(),
 		Note:        orderReq.GetNote(),
 		OrderValue:  orderReq.GetOrderValue(),
-		Cod:         orderReq.GetCod(),
+		COD:         orderReq.GetCod(),
 		Weight:      orderReq.GetWeight(),
 		ServiceCode: orderReq.GetServiceCode(),
 		From:        deliveryInfoPBToReq(orderReq.GetFrom()),

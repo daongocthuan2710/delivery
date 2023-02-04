@@ -1,0 +1,5 @@
+ALTER TABLE deliveries
+ALTER COLUMN value TYPE int8,
+ALTER COLUMN cod TYPE int8,
+ALTER COLUMN weight TYPE int8;
+
