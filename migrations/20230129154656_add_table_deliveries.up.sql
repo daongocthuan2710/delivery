@@ -10,6 +10,7 @@ CREATE TABLE deliveries
     value                 numeric                  default 0     not null,
     cod                   numeric                  default 0     not null,
     weight                numeric                  default 0     not null,
+    total_fee             int8                     default 0     not null,
     service_code          text                     default ''    not null,
     partner_status        text                     default ''    not null,
     partner_identity_code text                     default ''    not null,

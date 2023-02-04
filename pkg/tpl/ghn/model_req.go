@@ -12,11 +12,11 @@ type Item struct {
 }
 
 type CreateOrderReq struct {
-	PaymentTypeID   int     `json:"payment_type_id"`
-	Note            string  `json:"note"`
-	RequiredNote    string  `json:"required_note"`
-	ClientOrderCode string  `json:"client_order_code"`
-	CODAmount       float64 `json:"cod_amount"`
+	PaymentTypeID   int    `json:"payment_type_id"`
+	Note            string `json:"note"`
+	RequiredNote    string `json:"required_note"`
+	ClientOrderCode string `json:"client_order_code"`
+	CODAmount       int64  `json:"cod_amount"`
 
 	FromName       string `json:"from_name"`
 	FromPhone      string `json:"from_phone"`
@@ -31,12 +31,12 @@ type CreateOrderReq struct {
 	ToDistrictID int    `json:"to_district_id"`
 
 	Content string `json:"content"`
-	Weight  int    `json:"weight"`
+	Weight  int64  `json:"weight"`
 	Length  int    `json:"length,omitempty"`
 	Width   int    `json:"width,omitempty"`
 	Height  int    `json:"height,omitempty"`
 
-	InsuranceValue float64 `json:"insurance_value"`
+	InsuranceValue int64   `json:"insurance_value"`
 	ServiceTypeID  int     `json:"service_type_id"`
 	Items          []*Item `json:"items"`
 }

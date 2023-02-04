@@ -568,7 +568,7 @@ func testDeliveriesSelect(t *testing.T) {
 }
 
 var (
-	deliveryDBTypes = map[string]string{`ID`: `text`, `Code`: `text`, `TrackingCode`: `text`, `Note`: `text`, `Status`: `text`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `Value`: `numeric`, `Cod`: `numeric`, `Weight`: `numeric`, `ServiceCode`: `text`, `PartnerStatus`: `text`, `PartnerIdentityCode`: `text`, `FromName`: `text`, `FromPhone`: `text`, `FromAddress`: `text`, `FromProvinceCode`: `integer`, `FromDistrictCode`: `integer`, `FromWardCode`: `integer`, `ToName`: `text`, `ToPhone`: `text`, `ToAddress`: `text`, `ToProvinceCode`: `integer`, `ToDistrictCode`: `integer`, `ToWardCode`: `integer`}
+	deliveryDBTypes = map[string]string{`ID`: `text`, `Code`: `text`, `TrackingCode`: `text`, `Note`: `text`, `Status`: `text`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `Value`: `bigint`, `Cod`: `bigint`, `Weight`: `bigint`, `ServiceCode`: `text`, `PartnerStatus`: `text`, `PartnerIdentityCode`: `text`, `FromName`: `text`, `FromPhone`: `text`, `FromAddress`: `text`, `FromProvinceCode`: `integer`, `FromDistrictCode`: `integer`, `FromWardCode`: `integer`, `ToName`: `text`, `ToPhone`: `text`, `ToAddress`: `text`, `ToProvinceCode`: `integer`, `ToDistrictCode`: `integer`, `ToWardCode`: `integer`, `TotalFee`: `bigint`}
 	_               = bytes.MinRead
 )
 

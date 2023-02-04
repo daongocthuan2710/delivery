@@ -16,7 +16,7 @@ type Services struct {
 }
 
 func NewServices(deps *Deps) *Services {
-	loc := NewLocation()
+	loc := NewLocation(deps.Repos.Ward)
 	return &Services{
 		Location: loc,
 		Delivery: NewDeliveryService(deps.Repos.Delivery, deps.Cfg, loc),

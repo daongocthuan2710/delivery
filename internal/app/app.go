@@ -8,6 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"delivery/internal/config"
 	"delivery/internal/data"
@@ -33,6 +34,8 @@ func Run(cfg *config.Config) {
 	defer pg.Close()
 
 	go data.Init(pg.DB, cfg)
+
+	boil.DebugMode = cfg.Debug
 
 	// Repository
 	repos := repo.NewRepositories(pg.DB)

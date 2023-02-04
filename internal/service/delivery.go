@@ -4,8 +4,10 @@ import (
 	"context"
 	"sync"
 
+	"github.com/volatiletech/null/v8"
 	"golang.org/x/sync/errgroup"
 
+	"delivery/internal/apperr"
 	"delivery/internal/config"
 	"delivery/internal/constant"
 	"delivery/internal/model/req"
@@ -13,15 +15,13 @@ import (
 	"delivery/internal/repo"
 )
 
-const (
-	TPLCodeGHN = "GHN"
-)
-
 func NewDeliveryService(repo repo.IDelivery, cfg *config.Config, loc ILocation) *DeliverySvc {
+	isProd := cfg.App.ENV == constant.ENVProd
 	return &DeliverySvc{
 		repo:     repo,
 		cfg:      cfg,
 		location: loc,
+		ghn:      NewGHN(cfg.GHN, isProd),
 	}
 }
 
@@ -30,6 +30,7 @@ type DeliverySvc struct {
 	cfg  *config.Config
 
 	location ILocation
+	ghn      *PartnerGHN
 }
 
 func (s *DeliverySvc) EstimateFee(ctx context.Context, payload req.EstimateFee) (*res.EstimateFee, error) {
@@ -86,12 +87,52 @@ func (s *DeliverySvc) EstimateFee(ctx context.Context, payload req.EstimateFee) 
 }
 
 func (s *DeliverySvc) Create(ctx context.Context, payload req.DeliveryCreate) (*res.DeliveryCreate, error) {
+	// check exists first
+	total, err := s.repo.Count(ctx, repo.DeliveryQuery{OrderCode: payload.OrderCode})
+	if err != nil {
+		return nil, err
+	}
+	if total > 0 {
+		return nil, apperr.OrderCodeExisted
+	}
+	record, err := payload.ToEntity()
+	if err != nil {
+		return nil, err
+	}
+	p, err := s.getPartnerByIdentityCode(record.PartnerIdentityCode.String)
+	if err != nil {
+		return nil, err
+	}
+	from, to, err := s.getLocation(ctx, payload.From, payload.To)
+	if err != nil {
+		return nil, err
+	}
+	result, err := p.CreateOrder(ctx, payload, from, to)
+	if err != nil {
+		return nil, err
+	}
+	record.TrackingCode = null.StringFrom(result.TrackingCode)
+	record.Status = null.StringFrom(result.Status)
+	record.TotalFee = null.Int64From(result.TotalFee)
+
+	if err = s.repo.Insert(ctx, *record); err != nil {
+		return nil, err
+	}
+
 	return &res.DeliveryCreate{
-		OrderCode:    "123131",
-		TrackingCode: "code",
-		Status:       "waiting_to_pick",
-		TotalFee:     10000,
+		OrderCode:    payload.OrderCode,
+		TrackingCode: result.TrackingCode,
+		Status:       result.Status,
+		TotalFee:     result.TotalFee,
 	}, nil
+}
+
+func (s *DeliverySvc) getPartnerByIdentityCode(code string) (IPartner, error) {
+	switch code {
+	case constant.TPLCodeGHN:
+		return s.ghn, nil
+	}
+	return nil, apperr.PartnerNotFound
 }
 
 func (s *DeliverySvc) getLocation(ctx context.Context, from *req.DeliveryInfo, to *req.DeliveryInfo) (
@@ -128,8 +169,8 @@ func (s *DeliverySvc) getLocation(ctx context.Context, from *req.DeliveryInfo, t
 }
 
 func (s *DeliverySvc) getPartners() []IPartner {
-	isProd := s.cfg.App.ENV == constant.ENVProd
+
 	return []IPartner{
-		NewGHN(s.cfg.GHN, isProd),
+		s.ghn,
 	}
 }

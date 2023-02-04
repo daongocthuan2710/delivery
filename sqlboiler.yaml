@@ -40,6 +40,12 @@ types:
       type: null.Int
 
   - match:
+      type: int64
+      nullable: false
+    replace:
+      type: null.Int64
+
+  - match:
       type: bool
       nullable: false
     replace:

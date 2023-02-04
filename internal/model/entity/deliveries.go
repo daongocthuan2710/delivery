@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
-	"github.com/shopspring/decimal"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
@@ -25,31 +24,32 @@ import (
 
 // Delivery is an object representing the database table.
 type Delivery struct {
-	ID                  null.String     `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Code                null.String     `boil:"code" json:"code" toml:"code" yaml:"code"`
-	TrackingCode        null.String     `boil:"tracking_code" json:"tracking_code" toml:"tracking_code" yaml:"tracking_code"`
-	Note                null.String     `boil:"note" json:"note" toml:"note" yaml:"note"`
-	Status              null.String     `boil:"status" json:"status" toml:"status" yaml:"status"`
-	CreatedAt           null.Time       `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt           null.Time       `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	Value               decimal.Decimal `boil:"value" json:"value" toml:"value" yaml:"value"`
-	Cod                 decimal.Decimal `boil:"cod" json:"cod" toml:"cod" yaml:"cod"`
-	Weight              decimal.Decimal `boil:"weight" json:"weight" toml:"weight" yaml:"weight"`
-	ServiceCode         null.String     `boil:"service_code" json:"service_code" toml:"service_code" yaml:"service_code"`
-	PartnerStatus       null.String     `boil:"partner_status" json:"partner_status" toml:"partner_status" yaml:"partner_status"`
-	PartnerIdentityCode null.String     `boil:"partner_identity_code" json:"partner_identity_code" toml:"partner_identity_code" yaml:"partner_identity_code"`
-	FromName            null.String     `boil:"from_name" json:"from_name" toml:"from_name" yaml:"from_name"`
-	FromPhone           null.String     `boil:"from_phone" json:"from_phone" toml:"from_phone" yaml:"from_phone"`
-	FromAddress         null.String     `boil:"from_address" json:"from_address" toml:"from_address" yaml:"from_address"`
-	FromProvinceCode    null.Int        `boil:"from_province_code" json:"from_province_code" toml:"from_province_code" yaml:"from_province_code"`
-	FromDistrictCode    null.Int        `boil:"from_district_code" json:"from_district_code" toml:"from_district_code" yaml:"from_district_code"`
-	FromWardCode        null.Int        `boil:"from_ward_code" json:"from_ward_code" toml:"from_ward_code" yaml:"from_ward_code"`
-	ToName              null.String     `boil:"to_name" json:"to_name" toml:"to_name" yaml:"to_name"`
-	ToPhone             null.String     `boil:"to_phone" json:"to_phone" toml:"to_phone" yaml:"to_phone"`
-	ToAddress           null.String     `boil:"to_address" json:"to_address" toml:"to_address" yaml:"to_address"`
-	ToProvinceCode      null.Int        `boil:"to_province_code" json:"to_province_code" toml:"to_province_code" yaml:"to_province_code"`
-	ToDistrictCode      null.Int        `boil:"to_district_code" json:"to_district_code" toml:"to_district_code" yaml:"to_district_code"`
-	ToWardCode          null.Int        `boil:"to_ward_code" json:"to_ward_code" toml:"to_ward_code" yaml:"to_ward_code"`
+	ID                  null.String `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Code                null.String `boil:"code" json:"code" toml:"code" yaml:"code"`
+	TrackingCode        null.String `boil:"tracking_code" json:"tracking_code" toml:"tracking_code" yaml:"tracking_code"`
+	Note                null.String `boil:"note" json:"note" toml:"note" yaml:"note"`
+	Status              null.String `boil:"status" json:"status" toml:"status" yaml:"status"`
+	CreatedAt           null.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt           null.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	Value               null.Int64  `boil:"value" json:"value" toml:"value" yaml:"value"`
+	Cod                 null.Int64  `boil:"cod" json:"cod" toml:"cod" yaml:"cod"`
+	Weight              null.Int64  `boil:"weight" json:"weight" toml:"weight" yaml:"weight"`
+	ServiceCode         null.String `boil:"service_code" json:"service_code" toml:"service_code" yaml:"service_code"`
+	PartnerStatus       null.String `boil:"partner_status" json:"partner_status" toml:"partner_status" yaml:"partner_status"`
+	PartnerIdentityCode null.String `boil:"partner_identity_code" json:"partner_identity_code" toml:"partner_identity_code" yaml:"partner_identity_code"`
+	FromName            null.String `boil:"from_name" json:"from_name" toml:"from_name" yaml:"from_name"`
+	FromPhone           null.String `boil:"from_phone" json:"from_phone" toml:"from_phone" yaml:"from_phone"`
+	FromAddress         null.String `boil:"from_address" json:"from_address" toml:"from_address" yaml:"from_address"`
+	FromProvinceCode    null.Int    `boil:"from_province_code" json:"from_province_code" toml:"from_province_code" yaml:"from_province_code"`
+	FromDistrictCode    null.Int    `boil:"from_district_code" json:"from_district_code" toml:"from_district_code" yaml:"from_district_code"`
+	FromWardCode        null.Int    `boil:"from_ward_code" json:"from_ward_code" toml:"from_ward_code" yaml:"from_ward_code"`
+	ToName              null.String `boil:"to_name" json:"to_name" toml:"to_name" yaml:"to_name"`
+	ToPhone             null.String `boil:"to_phone" json:"to_phone" toml:"to_phone" yaml:"to_phone"`
+	ToAddress           null.String `boil:"to_address" json:"to_address" toml:"to_address" yaml:"to_address"`
+	ToProvinceCode      null.Int    `boil:"to_province_code" json:"to_province_code" toml:"to_province_code" yaml:"to_province_code"`
+	ToDistrictCode      null.Int    `boil:"to_district_code" json:"to_district_code" toml:"to_district_code" yaml:"to_district_code"`
+	ToWardCode          null.Int    `boil:"to_ward_code" json:"to_ward_code" toml:"to_ward_code" yaml:"to_ward_code"`
+	TotalFee            null.Int64  `boil:"total_fee" json:"total_fee,omitempty" toml:"total_fee" yaml:"total_fee,omitempty"`
 
 	R *deliveryR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L deliveryL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -81,6 +81,7 @@ var DeliveryColumns = struct {
 	ToProvinceCode      string
 	ToDistrictCode      string
 	ToWardCode          string
+	TotalFee            string
 }{
 	ID:                  "id",
 	Code:                "code",
@@ -107,6 +108,7 @@ var DeliveryColumns = struct {
 	ToProvinceCode:      "to_province_code",
 	ToDistrictCode:      "to_district_code",
 	ToWardCode:          "to_ward_code",
+	TotalFee:            "total_fee",
 }
 
 var DeliveryTableColumns = struct {
@@ -135,6 +137,7 @@ var DeliveryTableColumns = struct {
 	ToProvinceCode      string
 	ToDistrictCode      string
 	ToWardCode          string
+	TotalFee            string
 }{
 	ID:                  "deliveries.id",
 	Code:                "deliveries.code",
@@ -161,6 +164,7 @@ var DeliveryTableColumns = struct {
 	ToProvinceCode:      "deliveries.to_province_code",
 	ToDistrictCode:      "deliveries.to_district_code",
 	ToWardCode:          "deliveries.to_ward_code",
+	TotalFee:            "deliveries.total_fee",
 }
 
 // Generated where
@@ -221,25 +225,39 @@ func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
-type whereHelperdecimal_Decimal struct{ field string }
+type whereHelpernull_Int64 struct{ field string }
 
-func (w whereHelperdecimal_Decimal) EQ(x decimal.Decimal) qm.QueryMod {
+func (w whereHelpernull_Int64) EQ(x null.Int64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.EQ, x)
 }
-func (w whereHelperdecimal_Decimal) NEQ(x decimal.Decimal) qm.QueryMod {
+func (w whereHelpernull_Int64) NEQ(x null.Int64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.NEQ, x)
 }
-func (w whereHelperdecimal_Decimal) LT(x decimal.Decimal) qm.QueryMod {
+func (w whereHelpernull_Int64) LT(x null.Int64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LT, x)
 }
-func (w whereHelperdecimal_Decimal) LTE(x decimal.Decimal) qm.QueryMod {
+func (w whereHelpernull_Int64) LTE(x null.Int64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LTE, x)
 }
-func (w whereHelperdecimal_Decimal) GT(x decimal.Decimal) qm.QueryMod {
+func (w whereHelpernull_Int64) GT(x null.Int64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GT, x)
 }
-func (w whereHelperdecimal_Decimal) GTE(x decimal.Decimal) qm.QueryMod {
+func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+func (w whereHelpernull_Int64) IN(slice []int64) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+func (w whereHelpernull_Int64) NIN(slice []int64) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
 }
 
 type whereHelpernull_Int struct{ field string }
@@ -277,6 +295,9 @@ func (w whereHelpernull_Int) NIN(slice []int) qm.QueryMod {
 	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
 }
 
+func (w whereHelpernull_Int64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+
 var DeliveryWhere = struct {
 	ID                  whereHelpernull_String
 	Code                whereHelpernull_String
@@ -285,9 +306,9 @@ var DeliveryWhere = struct {
 	Status              whereHelpernull_String
 	CreatedAt           whereHelpernull_Time
 	UpdatedAt           whereHelpernull_Time
-	Value               whereHelperdecimal_Decimal
-	Cod                 whereHelperdecimal_Decimal
-	Weight              whereHelperdecimal_Decimal
+	Value               whereHelpernull_Int64
+	Cod                 whereHelpernull_Int64
+	Weight              whereHelpernull_Int64
 	ServiceCode         whereHelpernull_String
 	PartnerStatus       whereHelpernull_String
 	PartnerIdentityCode whereHelpernull_String
@@ -303,6 +324,7 @@ var DeliveryWhere = struct {
 	ToProvinceCode      whereHelpernull_Int
 	ToDistrictCode      whereHelpernull_Int
 	ToWardCode          whereHelpernull_Int
+	TotalFee            whereHelpernull_Int64
 }{
 	ID:                  whereHelpernull_String{field: "\"deliveries\".\"id\""},
 	Code:                whereHelpernull_String{field: "\"deliveries\".\"code\""},
@@ -311,9 +333,9 @@ var DeliveryWhere = struct {
 	Status:              whereHelpernull_String{field: "\"deliveries\".\"status\""},
 	CreatedAt:           whereHelpernull_Time{field: "\"deliveries\".\"created_at\""},
 	UpdatedAt:           whereHelpernull_Time{field: "\"deliveries\".\"updated_at\""},
-	Value:               whereHelperdecimal_Decimal{field: "\"deliveries\".\"value\""},
-	Cod:                 whereHelperdecimal_Decimal{field: "\"deliveries\".\"cod\""},
-	Weight:              whereHelperdecimal_Decimal{field: "\"deliveries\".\"weight\""},
+	Value:               whereHelpernull_Int64{field: "\"deliveries\".\"value\""},
+	Cod:                 whereHelpernull_Int64{field: "\"deliveries\".\"cod\""},
+	Weight:              whereHelpernull_Int64{field: "\"deliveries\".\"weight\""},
 	ServiceCode:         whereHelpernull_String{field: "\"deliveries\".\"service_code\""},
 	PartnerStatus:       whereHelpernull_String{field: "\"deliveries\".\"partner_status\""},
 	PartnerIdentityCode: whereHelpernull_String{field: "\"deliveries\".\"partner_identity_code\""},
@@ -329,6 +351,7 @@ var DeliveryWhere = struct {
 	ToProvinceCode:      whereHelpernull_Int{field: "\"deliveries\".\"to_province_code\""},
 	ToDistrictCode:      whereHelpernull_Int{field: "\"deliveries\".\"to_district_code\""},
 	ToWardCode:          whereHelpernull_Int{field: "\"deliveries\".\"to_ward_code\""},
+	TotalFee:            whereHelpernull_Int64{field: "\"deliveries\".\"total_fee\""},
 }
 
 // DeliveryRels is where relationship names are stored.
@@ -348,9 +371,9 @@ func (*deliveryR) NewStruct() *deliveryR {
 type deliveryL struct{}
 
 var (
-	deliveryAllColumns            = []string{"id", "code", "tracking_code", "note", "status", "created_at", "updated_at", "value", "cod", "weight", "service_code", "partner_status", "partner_identity_code", "from_name", "from_phone", "from_address", "from_province_code", "from_district_code", "from_ward_code", "to_name", "to_phone", "to_address", "to_province_code", "to_district_code", "to_ward_code"}
+	deliveryAllColumns            = []string{"id", "code", "tracking_code", "note", "status", "created_at", "updated_at", "value", "cod", "weight", "service_code", "partner_status", "partner_identity_code", "from_name", "from_phone", "from_address", "from_province_code", "from_district_code", "from_ward_code", "to_name", "to_phone", "to_address", "to_province_code", "to_district_code", "to_ward_code", "total_fee"}
 	deliveryColumnsWithoutDefault = []string{"id"}
-	deliveryColumnsWithDefault    = []string{"code", "tracking_code", "note", "status", "created_at", "updated_at", "value", "cod", "weight", "service_code", "partner_status", "partner_identity_code", "from_name", "from_phone", "from_address", "from_province_code", "from_district_code", "from_ward_code", "to_name", "to_phone", "to_address", "to_province_code", "to_district_code", "to_ward_code"}
+	deliveryColumnsWithDefault    = []string{"code", "tracking_code", "note", "status", "created_at", "updated_at", "value", "cod", "weight", "service_code", "partner_status", "partner_identity_code", "from_name", "from_phone", "from_address", "from_province_code", "from_district_code", "from_ward_code", "to_name", "to_phone", "to_address", "to_province_code", "to_district_code", "to_ward_code", "total_fee"}
 	deliveryPrimaryKeyColumns     = []string{"id"}
 	deliveryGeneratedColumns      = []string{}
 )

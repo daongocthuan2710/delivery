@@ -11,12 +11,10 @@ import (
 	"delivery/pkg/util/timeutil"
 )
 
-const (
-	GHNServiceCodeExpress  = "GHN_EXP"
-	GHNServiceCodeStandard = "GHN_STD"
-	GHNServiceCodeSaving   = "GHN_SAVING"
-
-	GHNServiceName = "Giao hàng nhanh"
+var (
+	ghnServiceTypeMapping = map[string]int{
+		constant.GHNServiceCodeStandard: ghn.ServiceTypeStandard,
+	}
 )
 
 func NewGHN(cfg config.GHN, isProd bool) *PartnerGHN {
@@ -62,9 +60,9 @@ func (p *PartnerGHN) EstimateFee(ctx context.Context, payload req.EstimateFee, f
 	estimateTime := timeutil.FormatInLocation(constant.TimeLayoutDDMMYYYY, data.Data.ExpectedDeliveryTime, constant.TimezoneHCM)
 	return []res.DeliveryService{
 		{
-			Name:         GHNServiceName,
-			Code:         GHNServiceCodeExpress,
-			TplCode:      TPLCodeGHN,
+			Name:         constant.GHNServiceName,
+			Code:         constant.GHNServiceCodeExpress,
+			TplCode:      constant.TPLCodeGHN,
 			TotalFee:     data.Data.TotalFee,
 			EstimateTime: estimateTime,
 		},
@@ -72,5 +70,38 @@ func (p *PartnerGHN) EstimateFee(ctx context.Context, payload req.EstimateFee, f
 }
 
 func (p *PartnerGHN) CreateOrder(ctx context.Context, payload req.DeliveryCreate, from, to *LocationDetail) (*res.DeliveryCreate, error) {
-	return nil, nil
+	c := ghn.New(p.Cfg.Token, p.Cfg.ShopID, p.IsProd)
+	ghnPayload := ghn.CreateOrderReq{
+		PaymentTypeID:   ghn.PaymentTypeSeller,
+		Note:            payload.Note,
+		RequiredNote:    ghn.RequiredNoteKHONGCHOXEMHANG,
+		ClientOrderCode: payload.OrderCode,
+		CODAmount:       payload.COD,
+		FromName:        payload.From.Name,
+		FromPhone:       payload.From.Phone,
+		FromAddress:     payload.From.Address,
+		FromDistrictID:  from.District.GHNID.Int,
+		FromWardCode:    from.Ward.GHNCode.String,
+		ToName:          payload.To.Name,
+		ToPhone:         payload.To.Phone,
+		ToAddress:       payload.To.Address,
+		ToWardCode:      to.Ward.GHNCode.String,
+		ToDistrictID:    to.District.GHNID.Int,
+		Content:         "",
+		Weight:          payload.Weight,
+		InsuranceValue:  payload.OrderValue,
+		ServiceTypeID:   ghnServiceTypeMapping[payload.ServiceCode],
+		Items:           make([]*ghn.Item, 0),
+	}
+	result, err := c.CreateOrder(ctx, ghnPayload)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res.DeliveryCreate{
+		OrderCode:    payload.OrderCode,
+		TrackingCode: result.Data.OrderCode,
+		Status:       constant.DStatusWaitingToPick,
+		TotalFee:     result.Data.TotalFee,
+	}, nil
 }
