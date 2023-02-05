@@ -32,7 +32,8 @@ type (
 
 	// GRPC -.
 	GRPC struct {
-		Port string `env-required:"true" yaml:"port" env:"GRPC_PORT"`
+		Port     string `env-required:"true" yaml:"port" env:"GRPC_PORT"`
+		OrderAdd string `yaml:"order_add" env:"GRPC_ORDER_ADD"`
 	}
 
 	// Log -.

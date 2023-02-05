@@ -356,15 +356,26 @@ var DeliveryWhere = struct {
 
 // DeliveryRels is where relationship names are stored.
 var DeliveryRels = struct {
-}{}
+	DeliveryHistories string
+}{
+	DeliveryHistories: "DeliveryHistories",
+}
 
 // deliveryR is where relationships are stored.
 type deliveryR struct {
+	DeliveryHistories DeliveryHistorySlice `boil:"DeliveryHistories" json:"DeliveryHistories" toml:"DeliveryHistories" yaml:"DeliveryHistories"`
 }
 
 // NewStruct creates a new relationship struct
 func (*deliveryR) NewStruct() *deliveryR {
 	return &deliveryR{}
+}
+
+func (r *deliveryR) GetDeliveryHistories() DeliveryHistorySlice {
+	if r == nil {
+		return nil
+	}
+	return r.DeliveryHistories
 }
 
 // deliveryL is where Load methods for each relationship are stored.
@@ -654,6 +665,187 @@ func (q deliveryQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (b
 	}
 
 	return count > 0, nil
+}
+
+// DeliveryHistories retrieves all the delivery_history's DeliveryHistories with an executor.
+func (o *Delivery) DeliveryHistories(mods ...qm.QueryMod) deliveryHistoryQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"delivery_histories\".\"delivery_id\"=?", o.ID),
+	)
+
+	return DeliveryHistories(queryMods...)
+}
+
+// LoadDeliveryHistories allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (deliveryL) LoadDeliveryHistories(ctx context.Context, e boil.ContextExecutor, singular bool, maybeDelivery interface{}, mods queries.Applicator) error {
+	var slice []*Delivery
+	var object *Delivery
+
+	if singular {
+		var ok bool
+		object, ok = maybeDelivery.(*Delivery)
+		if !ok {
+			object = new(Delivery)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeDelivery)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeDelivery))
+			}
+		}
+	} else {
+		s, ok := maybeDelivery.(*[]*Delivery)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeDelivery)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeDelivery))
+			}
+		}
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &deliveryR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &deliveryR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`delivery_histories`),
+		qm.WhereIn(`delivery_histories.delivery_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load delivery_histories")
+	}
+
+	var resultSlice []*DeliveryHistory
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice delivery_histories")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on delivery_histories")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for delivery_histories")
+	}
+
+	if len(deliveryHistoryAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.DeliveryHistories = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &deliveryHistoryR{}
+			}
+			foreign.R.Delivery = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.DeliveryID) {
+				local.R.DeliveryHistories = append(local.R.DeliveryHistories, foreign)
+				if foreign.R == nil {
+					foreign.R = &deliveryHistoryR{}
+				}
+				foreign.R.Delivery = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// AddDeliveryHistories adds the given related objects to the existing relationships
+// of the delivery, optionally inserting them as new records.
+// Appends related to o.R.DeliveryHistories.
+// Sets related.R.Delivery appropriately.
+func (o *Delivery) AddDeliveryHistories(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*DeliveryHistory) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.DeliveryID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"delivery_histories\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"delivery_id"}),
+				strmangle.WhereClause("\"", "\"", 2, deliveryHistoryPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.DeliveryID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &deliveryR{
+			DeliveryHistories: related,
+		}
+	} else {
+		o.R.DeliveryHistories = append(o.R.DeliveryHistories, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &deliveryHistoryR{
+				Delivery: o,
+			}
+		} else {
+			rel.R.Delivery = o
+		}
+	}
+	return nil
 }
 
 // Deliveries retrieves all the records using an executor.

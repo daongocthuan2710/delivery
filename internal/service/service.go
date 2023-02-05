@@ -19,6 +19,6 @@ func NewServices(deps *Deps) *Services {
 	loc := NewLocation(deps.Repos.Ward)
 	return &Services{
 		Location: loc,
-		Delivery: NewDeliveryService(deps.Repos.Delivery, deps.Cfg, loc),
+		Delivery: NewDeliveryService(deps.Repos.Delivery, deps.Repos.DeliveryHistory, deps.Cfg, loc),
 	}
 }

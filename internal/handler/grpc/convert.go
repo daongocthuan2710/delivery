@@ -17,7 +17,19 @@ func createDeliveryPBToReq(orderReq *proto.CreateDeliveryReq) req.DeliveryCreate
 		From:        deliveryInfoPBToReq(orderReq.GetFrom()),
 		To:          deliveryInfoPBToReq(orderReq.GetTo()),
 	}
+	items := make([]req.Item, len(orderReq.GetItems()))
+	for i, item := range orderReq.GetItems() {
+		items[i] = itemPBToReq(item)
+	}
 	return payload
+}
+
+func itemPBToReq(item *proto.Item) req.Item {
+	return req.Item{
+		Name:     item.GetName(),
+		Quantity: int(item.GetQuantity()),
+		Weight:   item.GetWeight(),
+	}
 }
 
 func estimateFeePBToReq(payload *proto.EstimateFeeReq) req.EstimateFee {

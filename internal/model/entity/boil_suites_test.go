@@ -13,6 +13,7 @@ import "testing"
 // Separating the tests thusly grants avoidance of Postgres deadlocks.
 func TestParent(t *testing.T) {
 	t.Run("Deliveries", testDeliveries)
+	t.Run("DeliveryHistories", testDeliveryHistories)
 	t.Run("Districts", testDistricts)
 	t.Run("Provinces", testProvinces)
 	t.Run("Wards", testWards)
@@ -20,6 +21,7 @@ func TestParent(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesDelete)
+	t.Run("DeliveryHistories", testDeliveryHistoriesDelete)
 	t.Run("Districts", testDistrictsDelete)
 	t.Run("Provinces", testProvincesDelete)
 	t.Run("Wards", testWardsDelete)
@@ -27,6 +29,7 @@ func TestDelete(t *testing.T) {
 
 func TestQueryDeleteAll(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesQueryDeleteAll)
+	t.Run("DeliveryHistories", testDeliveryHistoriesQueryDeleteAll)
 	t.Run("Districts", testDistrictsQueryDeleteAll)
 	t.Run("Provinces", testProvincesQueryDeleteAll)
 	t.Run("Wards", testWardsQueryDeleteAll)
@@ -34,6 +37,7 @@ func TestQueryDeleteAll(t *testing.T) {
 
 func TestSliceDeleteAll(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesSliceDeleteAll)
+	t.Run("DeliveryHistories", testDeliveryHistoriesSliceDeleteAll)
 	t.Run("Districts", testDistrictsSliceDeleteAll)
 	t.Run("Provinces", testProvincesSliceDeleteAll)
 	t.Run("Wards", testWardsSliceDeleteAll)
@@ -41,6 +45,7 @@ func TestSliceDeleteAll(t *testing.T) {
 
 func TestExists(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesExists)
+	t.Run("DeliveryHistories", testDeliveryHistoriesExists)
 	t.Run("Districts", testDistrictsExists)
 	t.Run("Provinces", testProvincesExists)
 	t.Run("Wards", testWardsExists)
@@ -48,6 +53,7 @@ func TestExists(t *testing.T) {
 
 func TestFind(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesFind)
+	t.Run("DeliveryHistories", testDeliveryHistoriesFind)
 	t.Run("Districts", testDistrictsFind)
 	t.Run("Provinces", testProvincesFind)
 	t.Run("Wards", testWardsFind)
@@ -55,6 +61,7 @@ func TestFind(t *testing.T) {
 
 func TestBind(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesBind)
+	t.Run("DeliveryHistories", testDeliveryHistoriesBind)
 	t.Run("Districts", testDistrictsBind)
 	t.Run("Provinces", testProvincesBind)
 	t.Run("Wards", testWardsBind)
@@ -62,6 +69,7 @@ func TestBind(t *testing.T) {
 
 func TestOne(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesOne)
+	t.Run("DeliveryHistories", testDeliveryHistoriesOne)
 	t.Run("Districts", testDistrictsOne)
 	t.Run("Provinces", testProvincesOne)
 	t.Run("Wards", testWardsOne)
@@ -69,6 +77,7 @@ func TestOne(t *testing.T) {
 
 func TestAll(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesAll)
+	t.Run("DeliveryHistories", testDeliveryHistoriesAll)
 	t.Run("Districts", testDistrictsAll)
 	t.Run("Provinces", testProvincesAll)
 	t.Run("Wards", testWardsAll)
@@ -76,6 +85,7 @@ func TestAll(t *testing.T) {
 
 func TestCount(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesCount)
+	t.Run("DeliveryHistories", testDeliveryHistoriesCount)
 	t.Run("Districts", testDistrictsCount)
 	t.Run("Provinces", testProvincesCount)
 	t.Run("Wards", testWardsCount)
@@ -83,6 +93,7 @@ func TestCount(t *testing.T) {
 
 func TestHooks(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesHooks)
+	t.Run("DeliveryHistories", testDeliveryHistoriesHooks)
 	t.Run("Districts", testDistrictsHooks)
 	t.Run("Provinces", testProvincesHooks)
 	t.Run("Wards", testWardsHooks)
@@ -91,6 +102,8 @@ func TestHooks(t *testing.T) {
 func TestInsert(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesInsert)
 	t.Run("Deliveries", testDeliveriesInsertWhitelist)
+	t.Run("DeliveryHistories", testDeliveryHistoriesInsert)
+	t.Run("DeliveryHistories", testDeliveryHistoriesInsertWhitelist)
 	t.Run("Districts", testDistrictsInsert)
 	t.Run("Districts", testDistrictsInsertWhitelist)
 	t.Run("Provinces", testProvincesInsert)
@@ -102,6 +115,7 @@ func TestInsert(t *testing.T) {
 // TestToOne tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToOne(t *testing.T) {
+	t.Run("DeliveryHistoryToDeliveryUsingDelivery", testDeliveryHistoryToOneDeliveryUsingDelivery)
 	t.Run("DistrictToProvinceUsingProvince", testDistrictToOneProvinceUsingProvince)
 	t.Run("WardToDistrictUsingDistrict", testWardToOneDistrictUsingDistrict)
 }
@@ -113,6 +127,7 @@ func TestOneToOne(t *testing.T) {}
 // TestToMany tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToMany(t *testing.T) {
+	t.Run("DeliveryToDeliveryHistories", testDeliveryToManyDeliveryHistories)
 	t.Run("DistrictToWards", testDistrictToManyWards)
 	t.Run("ProvinceToDistricts", testProvinceToManyDistricts)
 }
@@ -120,6 +135,7 @@ func TestToMany(t *testing.T) {
 // TestToOneSet tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToOneSet(t *testing.T) {
+	t.Run("DeliveryHistoryToDeliveryUsingDeliveryHistories", testDeliveryHistoryToOneSetOpDeliveryUsingDelivery)
 	t.Run("DistrictToProvinceUsingDistricts", testDistrictToOneSetOpProvinceUsingProvince)
 	t.Run("WardToDistrictUsingWards", testWardToOneSetOpDistrictUsingDistrict)
 }
@@ -139,6 +155,7 @@ func TestOneToOneRemove(t *testing.T) {}
 // TestToManyAdd tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToManyAdd(t *testing.T) {
+	t.Run("DeliveryToDeliveryHistories", testDeliveryToManyAddOpDeliveryHistories)
 	t.Run("DistrictToWards", testDistrictToManyAddOpWards)
 	t.Run("ProvinceToDistricts", testProvinceToManyAddOpDistricts)
 }
@@ -153,6 +170,7 @@ func TestToManyRemove(t *testing.T) {}
 
 func TestReload(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesReload)
+	t.Run("DeliveryHistories", testDeliveryHistoriesReload)
 	t.Run("Districts", testDistrictsReload)
 	t.Run("Provinces", testProvincesReload)
 	t.Run("Wards", testWardsReload)
@@ -160,6 +178,7 @@ func TestReload(t *testing.T) {
 
 func TestReloadAll(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesReloadAll)
+	t.Run("DeliveryHistories", testDeliveryHistoriesReloadAll)
 	t.Run("Districts", testDistrictsReloadAll)
 	t.Run("Provinces", testProvincesReloadAll)
 	t.Run("Wards", testWardsReloadAll)
@@ -167,6 +186,7 @@ func TestReloadAll(t *testing.T) {
 
 func TestSelect(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesSelect)
+	t.Run("DeliveryHistories", testDeliveryHistoriesSelect)
 	t.Run("Districts", testDistrictsSelect)
 	t.Run("Provinces", testProvincesSelect)
 	t.Run("Wards", testWardsSelect)
@@ -174,6 +194,7 @@ func TestSelect(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesUpdate)
+	t.Run("DeliveryHistories", testDeliveryHistoriesUpdate)
 	t.Run("Districts", testDistrictsUpdate)
 	t.Run("Provinces", testProvincesUpdate)
 	t.Run("Wards", testWardsUpdate)
@@ -181,6 +202,7 @@ func TestUpdate(t *testing.T) {
 
 func TestSliceUpdateAll(t *testing.T) {
 	t.Run("Deliveries", testDeliveriesSliceUpdateAll)
+	t.Run("DeliveryHistories", testDeliveryHistoriesSliceUpdateAll)
 	t.Run("Districts", testDistrictsSliceUpdateAll)
 	t.Run("Provinces", testProvincesSliceUpdateAll)
 	t.Run("Wards", testWardsSliceUpdateAll)

@@ -1,6 +1,8 @@
 package req
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,6 +21,22 @@ type DeliveryCreate struct {
 	ServiceCode string        `json:"serviceCode,omitempty"`
 	From        *DeliveryInfo `json:"from,omitempty"`
 	To          *DeliveryInfo `json:"to,omitempty"`
+	Items       []Item        `json:"items"`
+}
+
+func (d DeliveryCreate) GetContent() string {
+	arr := make([]string, len(d.Items))
+	for i, item := range d.Items {
+		s := fmt.Sprintf("%s x %d", item.Name, item.Quantity)
+		arr[i] = s
+	}
+	return strings.Join(arr, ",")
+}
+
+type Item struct {
+	Name     string `json:"name"`
+	Quantity int    `json:"quantity"`
+	Weight   int64  `json:"weight"`
 }
 
 func (d DeliveryCreate) ToEntity() (*entity.Delivery, error) {

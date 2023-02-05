@@ -494,6 +494,159 @@ func testDeliveriesInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testDeliveryToManyDeliveryHistories(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Delivery
+	var b, c DeliveryHistory
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, deliveryDBTypes, true, deliveryColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Delivery struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, deliveryHistoryDBTypes, false, deliveryHistoryColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, deliveryHistoryDBTypes, false, deliveryHistoryColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.DeliveryID, a.ID)
+	queries.Assign(&c.DeliveryID, a.ID)
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.DeliveryHistories().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if queries.Equal(v.DeliveryID, b.DeliveryID) {
+			bFound = true
+		}
+		if queries.Equal(v.DeliveryID, c.DeliveryID) {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := DeliverySlice{&a}
+	if err = a.L.LoadDeliveryHistories(ctx, tx, false, (*[]*Delivery)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.DeliveryHistories); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.DeliveryHistories = nil
+	if err = a.L.LoadDeliveryHistories(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.DeliveryHistories); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testDeliveryToManyAddOpDeliveryHistories(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Delivery
+	var b, c, d, e DeliveryHistory
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, deliveryDBTypes, false, strmangle.SetComplement(deliveryPrimaryKeyColumns, deliveryColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*DeliveryHistory{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, deliveryHistoryDBTypes, false, strmangle.SetComplement(deliveryHistoryPrimaryKeyColumns, deliveryHistoryColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*DeliveryHistory{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddDeliveryHistories(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ID, first.DeliveryID) {
+			t.Error("foreign key was wrong value", a.ID, first.DeliveryID)
+		}
+		if !queries.Equal(a.ID, second.DeliveryID) {
+			t.Error("foreign key was wrong value", a.ID, second.DeliveryID)
+		}
+
+		if first.R.Delivery != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Delivery != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.DeliveryHistories[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.DeliveryHistories[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.DeliveryHistories().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
 func testDeliveriesReload(t *testing.T) {
 	t.Parallel()
 

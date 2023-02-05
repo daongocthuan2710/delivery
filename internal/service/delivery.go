@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/volatiletech/null/v8"
 	"golang.org/x/sync/errgroup"
@@ -10,27 +11,91 @@ import (
 	"delivery/internal/apperr"
 	"delivery/internal/config"
 	"delivery/internal/constant"
+	"delivery/internal/model/entity"
+	"delivery/internal/model/proto"
 	"delivery/internal/model/req"
 	"delivery/internal/model/res"
 	"delivery/internal/repo"
+	"delivery/pkg/grpc/client"
+	"delivery/pkg/util/uuidutil"
 )
 
-func NewDeliveryService(repo repo.IDelivery, cfg *config.Config, loc ILocation) *DeliverySvc {
+func NewDeliveryService(repo repo.IDelivery, historyRepo repo.IDeliveryHistory, cfg *config.Config, loc ILocation) *DeliverySvc {
 	isProd := cfg.App.ENV == constant.ENVProd
 	return &DeliverySvc{
-		repo:     repo,
-		cfg:      cfg,
-		location: loc,
-		ghn:      NewGHN(cfg.GHN, isProd),
+		repo:        repo,
+		historyRepo: historyRepo,
+		cfg:         cfg,
+		location:    loc,
+		ghn:         NewGHN(cfg.GHN, isProd),
 	}
 }
 
 type DeliverySvc struct {
-	repo repo.IDelivery
-	cfg  *config.Config
+	repo        repo.IDelivery
+	historyRepo repo.IDeliveryHistory
+	cfg         *config.Config
 
 	location ILocation
 	ghn      *PartnerGHN
+}
+
+func (s *DeliverySvc) UpdateStatusFromWebhook(b []byte, partnerCode, ip string) error {
+	p, err := s.getPartnerByIdentityCode(partnerCode)
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	data, err := p.GetWebhookData(b)
+	if err != nil || data == nil || data.Status == "" {
+		return err
+	}
+	record, err := s.repo.FindOne(ctx, repo.DeliveryQuery{
+		OrderCode:    data.OrderCode,
+		TrackingCode: data.TrackingCode,
+	})
+	if err != nil {
+		return err
+	}
+	record.UpdatedAt = null.TimeFrom(time.Now())
+	record.Status = null.StringFrom(data.Status)
+	record.PartnerStatus = null.StringFrom(data.PartnerStatus)
+	cols := []string{
+		entity.DeliveryColumns.UpdatedAt,
+		entity.DeliveryColumns.Status,
+		entity.DeliveryColumns.PartnerStatus,
+	}
+	if err = s.repo.UpdateWhitelist(ctx, record, cols...); err != nil {
+		return err
+	}
+	s.onChangeStatus(ctx, record)
+	return nil
+}
+
+func (s *DeliverySvc) onChangeStatus(ctx context.Context, delivery *entity.Delivery) {
+	// save history
+	h := &entity.DeliveryHistory{
+		ID:         null.StringFrom(uuidutil.New()),
+		DeliveryID: delivery.ID,
+		Status:     delivery.Status,
+		CreatedAt:  null.TimeFrom(time.Now()),
+	}
+	s.historyRepo.Insert(ctx, h)
+
+	// send update to order
+	conn, cl, err := client.NewOrderClient(s.cfg.GRPC.OrderAdd)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	cl.UpdateDeliveryStatus(ctx, &proto.UpdateDeliveryStatusReq{
+		OrderCode:    delivery.Code.String,
+		TrackingCode: delivery.TrackingCode.String,
+		Status:       h.Status.String,
+		UpdatedAt:    h.CreatedAt.Time.Unix(),
+	})
 }
 
 func (s *DeliverySvc) EstimateFee(ctx context.Context, payload req.EstimateFee) (*res.EstimateFee, error) {
@@ -115,7 +180,7 @@ func (s *DeliverySvc) Create(ctx context.Context, payload req.DeliveryCreate) (*
 	record.Status = null.StringFrom(result.Status)
 	record.TotalFee = null.Int64From(result.TotalFee)
 
-	if err = s.repo.Insert(ctx, *record); err != nil {
+	if err = s.repo.Insert(ctx, record); err != nil {
 		return nil, err
 	}
 
