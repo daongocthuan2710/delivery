@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,6 +14,7 @@ import (
 	"delivery/internal/config"
 	"delivery/internal/data"
 	"delivery/internal/handler/grpc"
+	httphandler "delivery/internal/handler/http"
 	"delivery/internal/model/proto"
 	"delivery/internal/repo"
 	"delivery/internal/service"
@@ -60,6 +62,14 @@ func Run(cfg *config.Config) {
 		Format: "${time_rfc3339} | ${remote_ip} | ${method} ${uri} - ${status} - ${latency_human}\n",
 	}))
 	e.Use(middleware.Gzip())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete},
+		AllowHeaders: []string{"*"},
+	}))
+	e.Use(middleware.Recover())
+
+	httphandler.Init(services, cfg, e)
 
 	// init route
 	httpServer := httpserver.New(e, httpserver.Port(cfg.HTTP.Port))
