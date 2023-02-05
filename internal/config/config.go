@@ -1,8 +1,6 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
@@ -56,13 +54,7 @@ type (
 // Init returns app config.
 func Init() (*Config, error) {
 	cfg := &Config{}
-
-	err := cleanenv.ReadConfig("./internal/config/config.yml", cfg)
-	if err != nil {
-		return nil, fmt.Errorf("config error: %w", err)
-	}
-
-	err = cleanenv.ReadEnv(cfg)
+	err := cleanenv.ReadEnv(cfg)
 	if err != nil {
 		return nil, err
 	}
