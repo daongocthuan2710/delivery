@@ -1,7 +1,7 @@
 FROM golang:1.17 as builder
 
 # Add Maintainer Info
-LABEL maintainer="Selly <dev@selly.vn>"
+LABEL maintainer="Selly <dev@ecomx.vn>"
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
