@@ -1,0 +1,64 @@
+# Refer to https://github.com/volatiletech/sqlboiler#configuration
+psql:
+  dbname: ecomx-delivery
+  host: localhost
+  port: 5432
+  user: admin
+  pass: '123456'
+  sslmode: disable
+  blacklist:
+    - schema_migrations
+types:
+  - match:
+      type: types.Decimal # Replace the not null decimal fields with an easier to use lib.
+      nullable: false
+    replace:
+      type: decimal.Decimal
+    imports:
+      third_party:
+        - '"github.com/shopspring/decimal"'
+
+  - match:
+      type: types.NullDecimal
+      nullable: true
+    replace:
+      type: decimal.NullDecimal
+    imports:
+      third_party:
+        - '"github.com/shopspring/decimal"'
+
+  - match:
+      type: string
+      nullable: false
+    replace:
+      type: null.String
+
+  - match:
+      type: int
+      nullable: false
+    replace:
+      type: null.Int
+
+  - match:
+      type: int64
+      nullable: false
+    replace:
+      type: null.Int64
+
+  - match:
+      type: bool
+      nullable: false
+    replace:
+      type: null.Bool
+
+  - match:
+      type: time.Time
+      nullable: false
+    replace:
+      type: null.Time
+
+  - match:
+      type: types.JSON
+      nullable: false
+    replace:
+      type: null.JSON

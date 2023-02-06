@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+option go_package = "delivery/internal/model/proto";
+
+service Delivery {
+  rpc CreateDelivery(CreateDeliveryReq) returns (CreateDeliveryRes) {}
+  rpc EstimateFee(EstimateFeeReq) returns (EstimateFeeRes) {}
+}
+
+message EstimateFeeReq {
+  int64 order_value = 1;
+  int64 cod = 2;
+  int64 weight = 3;
+  DeliveryInfo from = 4;
+  DeliveryInfo to = 5;
+}
+
+message EstimateFeeRes {
+  repeated DeliveryService services = 1;
+}
+
+message DeliveryService {
+  string name = 1;
+  string code = 2;
+  string tpl_code = 3;
+  int64 total_fee = 4;
+  string estimate_time = 5;
+}
+
+message CreateDeliveryReq {
+  string order_code = 1;
+  string note = 2;
+  int64 order_value = 3;
+  int64 cod = 4;
+  int64 weight = 5;
+  string service_code = 6;
+  DeliveryInfo from = 7;
+  DeliveryInfo to = 8;
+  repeated Item items = 9;
+}
+
+message CreateDeliveryRes {
+  string order_code = 1;
+  string tracking_code = 2;
+  string status = 3;
+  int64 total_fee = 4;
+}
+
+message DeliveryInfo {
+  string name = 1;
+  string phone = 2;
+  string address = 3;
+  int32 province_id = 4;
+  int32 district_id = 5;
+  int32 ward_id = 6;
+}
+
+message Item {
+  string name = 1;
+  int32 quantity = 2;
+  int64 weight = 3;
+}
